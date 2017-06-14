@@ -52,7 +52,7 @@ int BroadcastPlugin::Register(std::string transaction,Json::Value &requestinfo){
 
   Json::Value body; 
   body["request"] = Json::Value("register");
-  body["client_id"] = Json::Value(m_clientID);
+  body["client_id"] = Json::Value((Json::UInt64)m_clientID);
 
   requestinfo["uprtc"] = Json::Value("message");
   requestinfo["body"] = Json::Value(body);
@@ -66,7 +66,7 @@ int BroadcastPlugin::Register(std::string transaction,Json::Value &requestinfo){
 int BroadcastPlugin::Join(std::string transaction,Json::Value &requestinfo){
   Json::Value body; 
   body["request"] = Json::Value("join");
-  body["client_id"] = Json::Value(m_clientID);
+  body["client_id"] = Json::Value((Json::UInt64)m_clientID);
   body["ptype"] = Json::Value(m_role == PUBLISHER ? "publisher":"listener");
   body["sec_key"] = Json::Value("");
   body["datachannel"] = Json::Value(false);

@@ -132,14 +132,14 @@ int JanusSignal::GetSessionAndHandleFromJson(Json::Value &message,uint64_t &sess
   double handleid = 0;
   if(rtc::GetDoubleFromJsonObject(message , "session_id",&sessionid) )
   {
-      printf("sessionid_ @@@@@@@@@@@@==============%llu\n",(uint64_t)sessionid);
+      printf("sessionid_ @@@@@@@@@@@@==============%lu\n",(uint64_t)sessionid);
       sessionID = (uint64_t)sessionid;
   }else {
       printf ("error get session_id\n");
   } 
   if(rtc::GetDoubleFromJsonObject(message, "sender",&handleid) )
   {
-      printf("sessionid_ @@@@@@@@@@@@==============%llu\n",(uint64_t)handleid);
+      printf("sessionid_ @@@@@@@@@@@@==============%lu\n",(uint64_t)handleid);
       handleID = (uint64_t)handleid;
   }else {
       printf ("error get handle id \n");
@@ -178,7 +178,7 @@ int JanusSignal::parseSignal(Json::Value &message){
               CreateHandle();
               /* 2.crate long pull start thread base method*/
               Start();
-              printf("sessionid_ @@@@@@@@@@@@==============%llu\n",m_sessionID);
+              printf("sessionid_ @@@@@@@@@@@@==============%lu\n",m_sessionID);
           } else {
               printf ("error\n");
           }
@@ -190,7 +190,7 @@ int JanusSignal::parseSignal(Json::Value &message){
                   /* 2.crate long pull */
               // new handle instance 
               StartBroadcast((uint64_t)handleid);
-              printf("sessionid_ @@@@@@@@@@@@==============%llu\n",(uint64_t)handleid);
+              printf("sessionid_ @@@@@@@@@@@@==============%lu\n",(uint64_t)handleid);
           }else {
               printf ("error\n");
           }          
