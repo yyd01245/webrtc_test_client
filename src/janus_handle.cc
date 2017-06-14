@@ -33,9 +33,9 @@ int BroadcastPlugin::parseEvent(Json::Value &message){
   LOG(INFO)<< type.c_str();
   if (!type.empty()) {
     if(type == "joined"){
-
+      m_jansuSignaler->Configure();
     }else if(type == "registered"){
-      m_jansuSignaler->Join();
+      m_jansuSignaler->Join(this);
     }else if(type == "attached"){
 
     }else if(type == "event"){
@@ -63,8 +63,17 @@ int BroadcastPlugin::Register(std::string transaction,Json::Value &requestinfo){
 
 
 
-int BroadcastPlugin::Join(){
+int BroadcastPlugin::Join(std::string transaction,Json::Value &requestinfo){
+  Json::Value body; 
+  body["request"] = Json::Value("join");
+  body["client_id"] = Json::Value(m_clientID);
+  body["ptype"] = Json::Value(m_role == PUBLISHER ? "publisher":"listener");
+  body["sec_key"] = Json::Value("");
+  body["datachannel"] = Json::Value(false);
 
+  requestinfo["uprtc"] = Json::Value("message");
+  requestinfo["body"] = Json::Value(body);
+  requestinfo["transaction"] = Json::Value(transaction);
   return 0;
 }
 int BroadcastPlugin::Trick(){

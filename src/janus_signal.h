@@ -33,7 +33,7 @@ public:
   int CreateSession();
   int CreateHandle();
   int Register(BroadcastPlugin* broadcast);
-  int Join();
+  int Join(BroadcastPlugin* broadcast);
   int Trick();
   int Configure();
   int Detach();

@@ -42,7 +42,7 @@ public:
   }
 
   int Register(std::string transaction,Json::Value &requestinfo);
-  int Join();
+  int Join(std::string transaction,Json::Value &requestinfo);
   int Trick();
   int Configure();
   int Detach();

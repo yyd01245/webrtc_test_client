@@ -213,6 +213,10 @@ int JanusSignal::parseSignal(Json::Value &message){
 
     }else if(type == "event"){
       // push json to plugin parse
+      std::string transaction;
+
+      rtc::GetStringFromJsonObject(message, "transaction", &transaction);
+      printf ("get id ~~~~~~~~~~`= local:%s,remote:%s\n",m_transaction.c_str(), transaction.c_str());
       uint64_t sessionID = 0;
       uint64_t handleID = 0;
       GetSessionAndHandleFromJson(message,sessionID,handleID);
@@ -228,6 +232,7 @@ int JanusSignal::parseSignal(Json::Value &message){
       }else {
         LOG(WARNING)<< "Unkown message event data"; 
       }
+      m_transcationMap.erase(transaction);
 
     }else {
       LOG(WARNING)<< "Unkown message /event on" << m_sessionID;
@@ -254,6 +259,7 @@ int JanusSignal::ResponeMessage(){
     //   LOG(WARNING)<< "Receive unknown message."<<message;
     //   return -1;
     // }
+    LOG(INFO)<<"http recv :"<<message;
     parseSignal(message);
     data.clear();
     
@@ -349,7 +355,7 @@ int JanusSignal::StartBroadcast(uint64_t handleID){
   if(role == PUBLISHER){
     Register(broadcast);
   }else if(role == LISTENER){
-    Join();
+    Join(broadcast);
   }
 
   return 0;
@@ -372,8 +378,23 @@ int JanusSignal::Register(BroadcastPlugin* broadcast){
   message.clear();
   return 0;
 }
-int JanusSignal::Join(){
+int JanusSignal::Join(BroadcastPlugin* broadcast){
   LOG(INFO)<< "----- BEGIN JOIN ------";
+  std::string transaction = _randomString(12);
+  Json::StyledWriter writer;
+  Json::Value requestinfo;  
+  broadcast->Join(transaction, requestinfo);           
+
+  LOG(INFO)<< requestinfo;
+  m_transcationMap[transaction] = JOIN;
+  std::string message(writer.write(requestinfo));
+  LOG(INFO)<< message << "sessionid "<< m_sessionID;
+  SendMessage(message,m_sessionID,broadcast->GetHandleID());
+
+  ResponeMessage();
+  requestinfo.clear();
+  message.clear();
+  return 0;
   return 0;
 }
 int JanusSignal::Trick(){
@@ -382,7 +403,7 @@ int JanusSignal::Trick(){
 }
 
 int JanusSignal::Configure(){
-
+  LOG(INFO)<< "----- BEGIN Configure ------";
   return 0;
 }
 
