@@ -16,6 +16,8 @@
 #include "webrtc/base/httpserver.h"
 #include "webrtc/base/httpclient.h"
 
+#include "./common.h"
+#include "./janus_handle.h"
 namespace uprtc {
 
 
@@ -30,14 +32,16 @@ public:
   int Initialize();
   int CreateSession();
   int CreateHandle();
-  int Register();
+  int Register(BroadcastPlugin* broadcast);
   int Join();
   int Trick();
   int Configure();
   int Detach();
   int Destory();
+  int StartBroadcast(uint64_t handleID);
+  int  GetSessionAndHandleFromJson(Json::Value &message,uint64_t &sessionID,uint64_t &handleID);
 
-  int SendMessage(std::string message);
+  int SendMessage(std::string message, uint64_t sessionID=0, uint64_t handleID=0);
   int ResponeMessage();
 
   int GetLongPullMessage();
@@ -49,12 +53,13 @@ public:
 
 private:
   bool m_bQuit;
+  bool m_bChangeUrl;
   std::string m_strDestIP;
   int m_iDestPort;
   std::string m_transaction;
   int m_maxev;
   uint64_t m_sessionID;
-  std::map<uint64_t,std::string> m_handlePlugins;
+  std::map<uint64_t,BroadcastPlugin* > m_handlePlugins;
   std::map<std::string,std::string> m_transcationMap;
 
   std::unique_ptr<rtc::HttpRequest> m_HttpRequest;

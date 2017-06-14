@@ -4,22 +4,7 @@
 
 using namespace uprtc;
 
-const std::string CREATESESSION = "create";
-const std::string CREATEHANDLE = "attach";
-const std::string REGISTER = "register";
-const std::string JOIN = "join";
-const std::string CONFIGURE = "configure";
-const std::string TRICKLE = "trickle";
 
-const std::string SUCCESS_SESSION  = "success";
-const std::string ERROR_SESSION = "error";
-const std::string ERROR_CREATEHANDLE = "errorHandle";
-const std::string SUCCESS_HANDLE  = "handleSuccess";
-const std::string MESSAGE = "message";
-const std::string WEBRTCSTATE = "webrtcState";
-const std::string MEDIASTATE = "mediaState";
-const std::string SLOWLINK = "slowLink";
-const std::string DETACHED = "detached";
 
 
 const std::string PLUGINS_NAME = "uprtc.plugin.broadcast";
@@ -97,14 +82,21 @@ JanusSignal::~JanusSignal(){
 
 
 int JanusSignal::Initialize(){
-  m_HttpRequest.reset(new rtc::HttpRequest("uprtc_client"));
-  m_HttpRequest->set_host(m_strDestIP);
-  m_HttpRequest->set_port(m_iDestPort);
+  // m_HttpRequest.reset(new rtc::HttpRequest("uprtc_client"));
+  // m_HttpRequest->set_host(m_strDestIP);
+  // m_HttpRequest->set_port(m_iDestPort);
+  // m_HttpRequest->request().verb = rtc::HV_POST;
+  // m_HttpRequest->request().path = "/uprtc";
+
+  m_bChangeUrl = false;
+  // std::string str;
+  // m_HttpRequest->response().setDocumentAndLength(new rtc::StringStream(&str));
   printf("init client over \n");
 
   m_longPull.reset(new rtc::HttpRequest("longPull"));
   m_longPull->set_host(m_strDestIP);
   m_longPull->set_port(m_iDestPort);
+
   printf("init long pull over \n");
   return 0;
 }
@@ -133,6 +125,27 @@ int JanusSignal::GetLongPullMessage(){
   parseSignal(responseJson);
 
   return 0;
+}
+
+int JanusSignal::GetSessionAndHandleFromJson(Json::Value &message,uint64_t &sessionID,uint64_t &handleID){
+  double sessionid = 0;
+  double handleid = 0;
+  if(rtc::GetDoubleFromJsonObject(message , "session_id",&sessionid) )
+  {
+      printf("sessionid_ @@@@@@@@@@@@==============%llu\n",(uint64_t)sessionid);
+      sessionID = (uint64_t)sessionid;
+  }else {
+      printf ("error get session_id\n");
+  } 
+  if(rtc::GetDoubleFromJsonObject(message, "sender",&handleid) )
+  {
+      printf("sessionid_ @@@@@@@@@@@@==============%llu\n",(uint64_t)handleid);
+      handleID = (uint64_t)handleid;
+  }else {
+      printf ("error get handle id \n");
+  } 
+  return 0;
+
 }
 
 int JanusSignal::parseSignal(Json::Value &message){
@@ -166,23 +179,19 @@ int JanusSignal::parseSignal(Json::Value &message){
               /* 2.crate long pull start thread base method*/
               Start();
               printf("sessionid_ @@@@@@@@@@@@==============%llu\n",m_sessionID);
-          }
-          else
-          {
+          } else {
               printf ("error\n");
           }
         }else if(data == CREATEHANDLE){
           double handleid = 0;
           if(rtc::GetDoubleFromJsonObject(message["data"], "id",&handleid) )
           {
-              auto handleID = (uint64_t)handleid;
+              // auto handleID = (uint64_t)handleid;
                   /* 2.crate long pull */
               // new handle instance 
-
-              printf("sessionid_ @@@@@@@@@@@@==============%llu\n",handleID);
-          }
-          else
-          {
+              StartBroadcast((uint64_t)handleid);
+              printf("sessionid_ @@@@@@@@@@@@==============%llu\n",(uint64_t)handleid);
+          }else {
               printf ("error\n");
           }          
         }
@@ -203,6 +212,22 @@ int JanusSignal::parseSignal(Json::Value &message){
     }else if(type == "error"){
 
     }else if(type == "event"){
+      // push json to plugin parse
+      uint64_t sessionID = 0;
+      uint64_t handleID = 0;
+      GetSessionAndHandleFromJson(message,sessionID,handleID);
+
+      Json::Value eventData;
+      if(rtc::GetValueFromJsonObject(message["plugindata"],"data",&eventData)){
+        if(handleID != 0){
+          auto iter = m_handlePlugins.find(handleID);
+          BroadcastPlugin* br = iter->second;
+          br->parseEvent(eventData);
+        }
+
+      }else {
+        LOG(WARNING)<< "Unkown message event data"; 
+      }
 
     }else {
       LOG(WARNING)<< "Unkown message /event on" << m_sessionID;
@@ -238,21 +263,33 @@ int JanusSignal::ResponeMessage(){
   return 0;
 }
 
-int JanusSignal::SendMessage(std::string message){
+int JanusSignal::SendMessage(std::string message, uint64_t sessionID, uint64_t handleID){
   LOG(INFO)<<"message "<<message;
 
   // 
+  m_HttpRequest.reset(new rtc::HttpRequest("uprtc_client"));
+  m_HttpRequest->set_host(m_strDestIP);
+  m_HttpRequest->set_port(m_iDestPort);
   m_HttpRequest->request().verb = rtc::HV_POST;
   m_HttpRequest->request().path = "/uprtc";
-  if(m_sessionID != 0){
+  if(sessionID != 0 ){ //&& !m_bChangeUrl
+
     m_HttpRequest->request().path += "/";
-    m_HttpRequest->request().path += std::to_string(m_sessionID);
+    m_HttpRequest->request().path += std::to_string(sessionID);
+
+    // m_bChangeUrl = true;
   }
+  if(handleID != 0){
+    m_HttpRequest->request().path += "/";
+    m_HttpRequest->request().path += std::to_string(handleID);
+  }
+
   LOG(INFO)<<"http path:"<<m_HttpRequest->request().path;
   m_HttpRequest->request().setContent("appliction/json",new rtc::StringStream(&message));
 
   std::string str;
   m_HttpRequest->response().setDocumentAndLength(new rtc::StringStream(&str));
+
   m_HttpRequest->Send();
 
   return 0;
@@ -280,9 +317,7 @@ int JanusSignal::CreateSession(){
 int JanusSignal::CreateHandle(){
   Json::StyledWriter writer;
   Json::Value requestinfo;  
-  m_HttpRequest.reset(new rtc::HttpRequest("uprtc_client"));
-  m_HttpRequest->set_host(m_strDestIP);
-  m_HttpRequest->set_port(m_iDestPort);
+
   
   m_transaction = _randomString(12);
   requestinfo["uprtc"] = Json::Value("attach");
@@ -291,7 +326,7 @@ int JanusSignal::CreateHandle(){
   m_transcationMap[m_transaction] = CREATEHANDLE;
   std::string message(writer.write(requestinfo));
   LOG(INFO)<< message << "sessionid "<< m_sessionID;
-  SendMessage(message);
+  SendMessage(message,m_sessionID);
 
   ResponeMessage();
   requestinfo.clear();
@@ -299,12 +334,46 @@ int JanusSignal::CreateHandle(){
 
   return 0;
 }
-int JanusSignal::Register(){
+
+int JanusSignal::StartBroadcast(uint64_t handleID){
+  int role = PUBLISHER;
+  uint64_t clientID = 2000;
+  clientInfo_t client;
+  client.role = role;
+  client.handleID = handleID;
+  client.clientID = clientID;
+  BroadcastPlugin* broadcast = new BroadcastPlugin(client,this);
+  m_handlePlugins[handleID] = broadcast;
+
+
+  if(role == PUBLISHER){
+    Register(broadcast);
+  }else if(role == LISTENER){
+    Join();
+  }
 
   return 0;
 }
-int JanusSignal::Join(){
 
+int JanusSignal::Register(BroadcastPlugin* broadcast){
+  std::string transaction = _randomString(12);
+  Json::StyledWriter writer;
+  Json::Value requestinfo;  
+  broadcast->Register(transaction, requestinfo);           
+
+  LOG(INFO)<< requestinfo;
+  m_transcationMap[transaction] = REGISTER;
+  std::string message(writer.write(requestinfo));
+  LOG(INFO)<< message << "sessionid "<< m_sessionID;
+  SendMessage(message,m_sessionID,broadcast->GetHandleID());
+
+  ResponeMessage();
+  requestinfo.clear();
+  message.clear();
+  return 0;
+}
+int JanusSignal::Join(){
+  LOG(INFO)<< "----- BEGIN JOIN ------";
   return 0;
 }
 int JanusSignal::Trick(){

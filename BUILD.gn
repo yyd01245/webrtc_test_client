@@ -607,6 +607,7 @@ if(is_mac || is_linux || is_win || is_android || is_ios){
     rtc_executable("webrtc_client") {
     sources = [ 
       "webrtc_client/src/firewallsocketserver.cc",
+      "webrtc_client/src/janus_handle.cc",
       "webrtc_client/src/janus_client.cc",
       "webrtc_client/src/janus_signal.cc",
       "webrtc_client/src/httprequest.cc",
