@@ -43,8 +43,10 @@ group("examples") {
       ":relayserver",
       ":stunserver",
       ":turnserver",
-      ":uprtc_client",
     ]
+  }
+  if(is_mac || is_linux || is_win || is_android || is_ios){
+    public_deps += [ ":webrtc_client",]
   }
 }
 
@@ -513,37 +515,6 @@ if (is_linux || is_win) {
     }
   }
 
-
-  rtc_executable("uprtc_client") {
-    sources = [
-      "uprtc_client/src/firewallsocketserver.cc",
-      "uprtc_client/src/janus_client.cc",
-      "uprtc_client/src/janus_signal.cc",
-      "uprtc_client/src/httprequest.cc",
-    ]
-
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
-
-    deps = [
-      "//webrtc/base:rtc_base",
-      "//webrtc/api:libjingle_peerconnection",
-      "//webrtc/system_wrappers:field_trial_default",
-      "//webrtc/system_wrappers:metrics_default",
-    ]
-    if (is_linux) {
-      libs = [
-      ]
-      # deps += [ "//build/config/linux/gtk" ]
-    }
-    configs += [ ":peerconnection_client_warnings_config" ]
-    if (rtc_build_json) {
-      deps += [ "//third_party/jsoncpp" ]
-    }
-  }
-
   rtc_executable("peerconnection_server") {
     sources = [
       "peerconnection/server/data_socket.cc",
@@ -629,5 +600,32 @@ if (!build_with_chromium) {
       "../p2p:rtc_p2p",
       "../system_wrappers:field_trial_default",
     ]
+  }
+}
+
+if(is_mac || is_linux || is_win || is_android || is_ios){
+    rtc_executable("webrtc_client") {
+    sources = [ 
+      "webrtc_client/src/firewallsocketserver.cc",
+      "webrtc_client/src/janus_client.cc",
+      "webrtc_client/src/janus_signal.cc",
+      "webrtc_client/src/httprequest.cc",
+    ]
+
+    if (!build_with_chromium && is_clang) {
+      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+    }
+
+    deps = [
+      "//webrtc/base:rtc_base",
+      "//webrtc/api:libjingle_peerconnection",
+      "//webrtc/system_wrappers:field_trial_default",
+      "//webrtc/system_wrappers:metrics_default",
+    ]
+    #configs += [ ":peerconnection_client_warnings_config" ]
+    if (rtc_build_json) {
+      deps += [ "//third_party/jsoncpp" ]
+    }
   }
 }
