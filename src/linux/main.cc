@@ -82,7 +82,7 @@ int main(int argc, char* argv[]) {
   rtc::Thread* thread = rtc::Thread::Current();
   CustomSocketServer socket_server(thread, &wnd);
   // todo 
-  // thread->set_socketserver(&socket_server);
+  thread->set_socketserver(&socket_server);
 
   rtc::InitializeSSL();
   // Must be constructed after we set the socketserver.
@@ -93,7 +93,7 @@ int main(int argc, char* argv[]) {
   socket_server.set_client(client);
   socket_server.set_conductor(conductor);
   LOG(INFO) << __FUNCTION__<<" line " << __LINE__;
-  
+
   thread->Run();
 
   // gtk_main();

@@ -82,14 +82,14 @@ bool Conductor::InitializePeerConnection() {
   ASSERT(peer_connection_.get() == NULL);
 
   peer_connection_factory_  = webrtc::CreatePeerConnectionFactory();
-
+  LOG(INFO) << __FUNCTION__<<" line " << __LINE__;
   if (!peer_connection_factory_.get()) {
     main_wnd_->MessageBox("Error",
         "Failed to initialize PeerConnectionFactory", true);
     DeletePeerConnection();
     return false;
   }
-
+  LOG(INFO) << __FUNCTION__<<" line " << __LINE__;
   if (!CreatePeerConnection(DTLS_ON)) {
     main_wnd_->MessageBox("Error",
         "CreatePeerConnection failed", true);
@@ -120,7 +120,7 @@ bool Conductor::CreatePeerConnection(bool dtls) {
   webrtc::PeerConnectionInterface::IceServer server;
   server.uri = GetPeerConnectionString();
   config.servers.push_back(server);
-
+  LOG(INFO) << __FUNCTION__<<" line " << __LINE__;
   webrtc::FakeConstraints constraints;
   if (dtls) {
     constraints.AddOptional(webrtc::MediaConstraintsInterface::kEnableDtlsSrtp,
@@ -129,9 +129,10 @@ bool Conductor::CreatePeerConnection(bool dtls) {
     constraints.AddOptional(webrtc::MediaConstraintsInterface::kEnableDtlsSrtp,
                             "false");
   }
-
+  LOG(INFO) << __FUNCTION__<<" line " << __LINE__;
   peer_connection_ = peer_connection_factory_->CreatePeerConnection(
       config, &constraints, NULL, NULL, this);
+  LOG(INFO) << __FUNCTION__<<" line " << __LINE__;      
   return peer_connection_.get() != NULL;
 }
 
@@ -234,11 +235,12 @@ void Conductor::OnPeerDisconnected(int id) {
 void Conductor::OnMessageFromPeer(int peer_id, const std::string& message) {
   ASSERT(peer_id_ == peer_id || peer_id_ == -1);
   ASSERT(!message.empty());
-
+  LOG(INFO) << __FUNCTION__<<" line " << __LINE__;
+  LOG(INFO)<< "OnMessageFromPeer : "<< message;
   if (!peer_connection_.get()) {
     ASSERT(peer_id_ == -1);
     peer_id_ = peer_id;
-
+    LOG(INFO)<< "begin init peerconnection" << "message"<< message;
     if (!InitializePeerConnection()) {
       LOG(LS_ERROR) << "Failed to initialize our PeerConnection instance";
       client_->SignOut();
@@ -250,7 +252,7 @@ void Conductor::OnMessageFromPeer(int peer_id, const std::string& message) {
                     "conversation with a different peer.";
     return;
   }
-
+  LOG(INFO) << __FUNCTION__<<" line " << __LINE__;
   Json::Reader reader;
   Json::Value jmessage;
   if (!reader.parse(message, jmessage)) {
@@ -259,7 +261,7 @@ void Conductor::OnMessageFromPeer(int peer_id, const std::string& message) {
   }
   std::string type;
   std::string json_object;
-
+  LOG(INFO)<< jmessage;
   rtc::GetStringFromJsonObject(jmessage, kSessionDescriptionTypeName, &type);
   if (!type.empty()) {
     if (type == "offer-loopback") {
@@ -351,15 +353,16 @@ void Conductor::DisconnectFromServer() {
 }
 
 void Conductor::ConnectToPeer(int peer_id) {
+  // begin create offer and connect to peer
   ASSERT(peer_id_ == -1);
   ASSERT(peer_id != -1);
-
+  LOG(INFO) << __FUNCTION__<<" line " << __LINE__;
   if (peer_connection_.get()) {
     main_wnd_->MessageBox("Error",
         "We only support connecting to one peer at a time", true);
     return;
   }
-
+  LOG(INFO)<<  "BEGIN connect peer : "<< peer_id;
   if (InitializePeerConnection()) {
     peer_id_ = peer_id;
     peer_connection_->CreateOffer(this, NULL);
@@ -521,21 +524,24 @@ void Conductor::OnSuccess(webrtc::SessionDescriptionInterface* desc) {
   std::string sdp;
   desc->ToString(&sdp);
 
-  // For loopback test. To save some connecting delay.
-  if (loopback_) {
-    // Replace message type from "offer" to "answer"
-    webrtc::SessionDescriptionInterface* session_description(
-        webrtc::CreateSessionDescription("answer", sdp, nullptr));
-    peer_connection_->SetRemoteDescription(
-        DummySetSessionDescriptionObserver::Create(), session_description);
-    return;
-  }
+  // set sdp to server
+  client_->ConfigureSDP2Janus((uint64_t)peer_id_,desc->type(),sdp);
 
-  Json::StyledWriter writer;
-  Json::Value jmessage;
-  jmessage[kSessionDescriptionTypeName] = desc->type();
-  jmessage[kSessionDescriptionSdpName] = sdp;
-  SendMessage(writer.write(jmessage));
+  // For loopback test. To save some connecting delay.
+  // if (loopback_) {
+  //   // Replace message type from "offer" to "answer"
+  //   webrtc::SessionDescriptionInterface* session_description(
+  //       webrtc::CreateSessionDescription("answer", sdp, nullptr));
+  //   peer_connection_->SetRemoteDescription(
+  //       DummySetSessionDescriptionObserver::Create(), session_description);
+  //   return;
+  // }
+
+  // Json::StyledWriter writer;
+  // Json::Value jmessage;
+  // jmessage[kSessionDescriptionTypeName] = desc->type();
+  // jmessage[kSessionDescriptionSdpName] = sdp;
+  // SendMessage(writer.write(jmessage));
 }
 
 void Conductor::OnFailure(const std::string& error) {

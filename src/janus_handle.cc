@@ -25,7 +25,7 @@ int BroadcastPlugin::StartBroadcast(){
   return 0;
 }
 
-int BroadcastPlugin::parseEvent(Json::Value &message){
+int BroadcastPlugin::parseEvent(Json::Value &message,Json::Value &jsep){
 
   std::string type;
   LOG(INFO)<< message;
@@ -33,11 +33,21 @@ int BroadcastPlugin::parseEvent(Json::Value &message){
   LOG(INFO)<< type.c_str();
   if (!type.empty()) {
     if(type == "joined"){
-      m_jansuSignaler->Configure();
+      m_jansuSignaler->Configure(this);
     }else if(type == "registered"){
       m_jansuSignaler->Join(this);
     }else if(type == "attached"){
 
+    }else if(type == "configure"){
+      std::string res;
+      if(rtc::GetStringFromJsonObject(message,"configure",&res)){
+        if(res == "ok"){
+          LOG(INFO)<< "confiure return ok";
+
+          m_jansuSignaler->ReplyConfigure(this,jsep);
+        }
+
+      }      
     }else if(type == "event"){
 
     }else if(type == "detroyed"){
@@ -80,8 +90,23 @@ int BroadcastPlugin::Trick(){
 
   return 0;
 }
-int BroadcastPlugin::Configure(){
+int BroadcastPlugin::Configure(std::string transaction,Json::Value &requestinfo,
+        std::string type,std::string sdp){
+  Json::Value body;
+  Json::Value message;
+  Json::Value jsep; 
+  message["request"] = Json::Value("configure");
+  message["audio"] = Json::Value(true);
+  message["video"] = Json::Value(true);
 
+  jsep["type"] = Json::Value(type);
+  jsep["sdp"] = Json::Value(sdp);
+  body["message"] = Json::Value(message);
+  body["jsep"] = Json::Value(jsep);
+
+  requestinfo["uprtc"] = Json::Value("message");
+  requestinfo["body"] = Json::Value(body);
+  requestinfo["transaction"] = Json::Value(transaction);          
   return 0;
 }
 int BroadcastPlugin::Detach(){

@@ -72,6 +72,7 @@ JanusSignal::JanusSignal(const std::string destIP,int destPort){
   m_transaction = "";
   m_maxev = 1;
   m_bQuit = false;
+  m_bConnect = false;
   callback_ = NULL;
   Initialize();
   printf("%s:%d  begin \n",__FUNCTION__,__LINE__);
@@ -95,7 +96,9 @@ int JanusSignal::id() const {
 
 void JanusSignal::Connect(const std::string& server, int port,
               const std::string& client_name){
-
+  // connnect to server
+  
+  CreateSession();              
 }
 
 bool JanusSignal::SendToPeer(int peer_id, const std::string& message){
@@ -116,7 +119,7 @@ bool JanusSignal::SignOut(){
 }
 
 bool JanusSignal::is_connected() const {
-  return true;
+  return m_bConnect;
 }
 
 const Peers& JanusSignal::peers() const {
@@ -192,7 +195,7 @@ int JanusSignal::GetSessionAndHandleFromJson(Json::Value &message,uint64_t &sess
 }
 
 int JanusSignal::parseSignal(Json::Value &message){
-
+  m_bConnect= true;
   std::string type;
   LOG(INFO)<< message;
   rtc::GetStringFromJsonObject(message,"uprtc",&type);
@@ -269,7 +272,10 @@ int JanusSignal::parseSignal(Json::Value &message){
         if(handleID != 0){
           auto iter = m_handlePlugins.find(handleID);
           BroadcastPlugin* br = iter->second;
-          br->parseEvent(eventData);
+          Json::Value jsepData;
+          rtc::GetValueFromJsonObject(message["plugindata"],"jsep",&jsepData);
+
+          br->parseEvent(eventData,jsepData);
         }
 
       }else {
@@ -385,6 +391,7 @@ int JanusSignal::CreateHandle(){
 }
 
 int JanusSignal::StartBroadcast(uint64_t handleID){
+  callback_->OnSignedIn();
   int role = PUBLISHER;
   uint64_t clientID = 2000;
   clientInfo_t client;
@@ -405,6 +412,7 @@ int JanusSignal::StartBroadcast(uint64_t handleID){
 }
 
 int JanusSignal::Register(BroadcastPlugin* broadcast){
+
   std::string transaction = _randomString(12);
   Json::StyledWriter writer;
   Json::Value requestinfo;  
@@ -438,18 +446,57 @@ int JanusSignal::Join(BroadcastPlugin* broadcast){
   requestinfo.clear();
   message.clear();
   return 0;
-  return 0;
 }
 int JanusSignal::Trick(){
 
   return 0;
 }
 
-int JanusSignal::Configure(){
+int JanusSignal::Configure(BroadcastPlugin* broadcast){
   LOG(INFO)<< "----- BEGIN Configure ------";
+  int id = (int)broadcast->GetHandleID();
+  std::string name = " publisher ";
+    peers_[id] = name;
+  LOG(INFO)<< id <<name;
+  callback_->OnPeerConnected(id, name);
+  // callback_->OnPeerConnected(1,"first ");
   return 0;
 }
+int JanusSignal::ConfigureSDP2Janus(uint64_t handleID,std::string type,std::string sdp){
+  LOG(INFO)<< "----- BEGIN ConfigureSDP2Janus ------";
+  std::string transaction = _randomString(12);
+  Json::StyledWriter writer;
+  Json::Value requestinfo;  
+  auto iter = m_handlePlugins.find(handleID);
+  BroadcastPlugin* br = iter->second;
 
+  br->Configure(transaction, requestinfo,type,sdp);           
+
+  LOG(INFO)<< requestinfo;
+  m_transcationMap[transaction] = JOIN;
+  std::string message(writer.write(requestinfo));
+  LOG(INFO)<< message << "sessionid "<< m_sessionID;
+  SendMessage(message,m_sessionID,br->GetHandleID());
+
+  ResponeMessage();
+  requestinfo.clear();
+  message.clear();
+  return 0;
+  return 0;
+}
+int JanusSignal::ReplyConfigure(BroadcastPlugin* broadcast,Json::Value &jsep){
+  std::string type;
+  std::string sdp;
+  if(rtc::GetStringFromJsonObject(jsep,"type",&type)){
+    if(rtc::GetStringFromJsonObject(jsep,"sdp",&sdp)){
+      Json::StyledWriter writer;
+      // Json::Value jmessage;
+      callback_->OnMessageFromPeer((int)broadcast->GetHandleID(),
+        writer.write(jsep));
+    }
+  }
+  return 0;
+}
 
 int JanusSignal::Detach(){
 

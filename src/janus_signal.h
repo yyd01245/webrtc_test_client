@@ -74,7 +74,9 @@ public:
   int Register(BroadcastPlugin* broadcast);
   int Join(BroadcastPlugin* broadcast);
   int Trick();
-  int Configure();
+  int Configure(BroadcastPlugin* broadcast);
+  int ConfigureSDP2Janus(uint64_t handleid, std::string type,std::string sdp);
+  int ReplyConfigure(BroadcastPlugin* broadcast,Json::Value &json);
   int Detach();
   int Destory();
   int StartBroadcast(uint64_t handleID);

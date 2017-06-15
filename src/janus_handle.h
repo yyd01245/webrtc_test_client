@@ -44,9 +44,10 @@ public:
   int Register(std::string transaction,Json::Value &requestinfo);
   int Join(std::string transaction,Json::Value &requestinfo);
   int Trick();
-  int Configure();
+  int Configure(std::string transaction,Json::Value &requestinfo,
+        std::string type,std::string sdp);
   int Detach();
-  int parseEvent(Json::Value &message);
+  int parseEvent(Json::Value &message,Json::Value &jsep);
 
 
 private:

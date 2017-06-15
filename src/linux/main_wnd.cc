@@ -57,6 +57,7 @@ void OnRowActivatedCallback(GtkTreeView* tree_view, GtkTreePath* path,
 }
 
 gboolean SimulateLastRowActivated(gpointer data) {
+    LOG(INFO) << __FUNCTION__<<" line " << __LINE__;
   GtkTreeView* tree_view = reinterpret_cast<GtkTreeView*>(data);
   GtkTreeModel* model = gtk_tree_view_get_model(tree_view);
 
@@ -79,6 +80,7 @@ gboolean SimulateLastRowActivated(gpointer data) {
 
 // Creates a tree view, that we use to display the list of peers.
 void InitializeList(GtkWidget* list) {
+    LOG(INFO) << __FUNCTION__<<" line " << __LINE__;
   GtkCellRenderer* renderer = gtk_cell_renderer_text_new();
   GtkTreeViewColumn* column = gtk_tree_view_column_new_with_attributes(
       "List Items", renderer, "text", 0, NULL);
@@ -137,6 +139,9 @@ GtkMainWnd::GtkMainWnd(const char* server, int port, bool autoconnect,
       port_edit_(NULL), peer_list_(NULL), callback_(NULL),
       server_(server), autoconnect_(autoconnect), autocall_(autocall) {
   char buffer[10];
+    LOG(INFO) << __FUNCTION__<<" line " << __LINE__ 
+        <<" autoconnect "<<autoconnect_<<" server "
+        << server<<" port " <<port;
   sprintfn(buffer, sizeof(buffer), "%i", port);
   port_ = buffer;
 }
@@ -156,6 +161,7 @@ bool GtkMainWnd::IsWindow() {
 
 void GtkMainWnd::MessageBox(const char* caption, const char* text,
                             bool is_error) {
+  LOG(INFO) << __FUNCTION__<<" line " << __LINE__;
   GtkWidget* dialog = gtk_message_dialog_new(GTK_WINDOW(window_),
       GTK_DIALOG_DESTROY_WITH_PARENT,
       is_error ? GTK_MESSAGE_ERROR : GTK_MESSAGE_INFO,
@@ -200,7 +206,7 @@ void GtkMainWnd::QueueUIThreadCallback(int msg_id, void* data) {
 
 bool GtkMainWnd::Create() {
   ASSERT(window_ == NULL);
-
+  LOG(INFO) << __FUNCTION__<<" line " << __LINE__;
   window_ = gtk_window_new(GTK_WINDOW_TOPLEVEL);
   if (window_) {
     gtk_window_set_position(GTK_WINDOW(window_), GTK_WIN_POS_CENTER);
