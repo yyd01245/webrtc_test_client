@@ -72,6 +72,8 @@ JanusSignal::JanusSignal(const std::string destIP,int destPort){
   m_transaction = "";
   m_maxev = 1;
   m_bQuit = false;
+  callback_ = NULL;
+  Initialize();
   printf("%s:%d  begin \n",__FUNCTION__,__LINE__);
   std::cout<<"JanusSignal create"<<std::endl;
 }

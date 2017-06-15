@@ -39,6 +39,7 @@ class CustomSocketServer : public rtc::PhysicalSocketServer {
 
     if (!wnd_->IsWindow() && !conductor_->connection_active() &&
         client_ != NULL && !client_->is_connected()) {
+          printf("main thread quit \n");
       thread_->Quit();
     }
     return rtc::PhysicalSocketServer::Wait(0/*cms == -1 ? 1 : cms*/,
@@ -85,12 +86,14 @@ int main(int argc, char* argv[]) {
 
   rtc::InitializeSSL();
   // Must be constructed after we set the socketserver.
-  JanusSignal client;
+  // JanusSignal client;
+  JanusSignal *client = new JanusSignal("10.0.3.115",8088);
   rtc::scoped_refptr<Conductor> conductor(
-      new rtc::RefCountedObject<Conductor>(&client, &wnd));
-  socket_server.set_client(&client);
+      new rtc::RefCountedObject<Conductor>(client, &wnd));
+  socket_server.set_client(client);
   socket_server.set_conductor(conductor);
-
+  LOG(INFO) << __FUNCTION__<<" line " << __LINE__;
+  
   thread->Run();
 
   // gtk_main();

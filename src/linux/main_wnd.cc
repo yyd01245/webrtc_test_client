@@ -147,6 +147,7 @@ GtkMainWnd::~GtkMainWnd() {
 
 void GtkMainWnd::RegisterObserver(MainWndCallback* callback) {
   callback_ = callback;
+  LOG(INFO) << __FUNCTION__<<" line " << __LINE__;
 }
 
 bool GtkMainWnd::IsWindow() {
@@ -212,6 +213,7 @@ bool GtkMainWnd::Create() {
 
     SwitchToConnectUI();
   }
+  printf("new window success \n");
 
   return window_ != NULL;
 }
@@ -238,7 +240,7 @@ void GtkMainWnd::SwitchToConnectUI() {
     gtk_widget_destroy(peer_list_);
     peer_list_ = NULL;
   }
-
+  LOG(INFO) << __FUNCTION__<<" line " << __LINE__;
 #if GTK_MAJOR_VERSION == 2
   vbox_ = gtk_vbox_new(FALSE, 5);
 #else
@@ -247,13 +249,13 @@ void GtkMainWnd::SwitchToConnectUI() {
   GtkWidget* valign = gtk_alignment_new(0, 1, 0, 0);
   gtk_container_add(GTK_CONTAINER(vbox_), valign);
   gtk_container_add(GTK_CONTAINER(window_), vbox_);
-
+  LOG(INFO) << __FUNCTION__<<" line " << __LINE__;
 #if GTK_MAJOR_VERSION == 2
   GtkWidget* hbox = gtk_hbox_new(FALSE, 5);
 #else
   GtkWidget* hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
 #endif
-
+  LOG(INFO) << __FUNCTION__<<" line " << __LINE__;
   GtkWidget* label = gtk_label_new("Server");
   gtk_container_add(GTK_CONTAINER(hbox), label);
 
@@ -267,16 +269,22 @@ void GtkMainWnd::SwitchToConnectUI() {
   gtk_widget_set_size_request(port_edit_, 70, 30);
   gtk_container_add(GTK_CONTAINER(hbox), port_edit_);
 
+  LOG(INFO) << __FUNCTION__<<" line " << __LINE__;
+
   GtkWidget* button = gtk_button_new_with_label("Connect");
   gtk_widget_set_size_request(button, 70, 30);
   g_signal_connect(button, "clicked", G_CALLBACK(OnClickedCallback), this);
   gtk_container_add(GTK_CONTAINER(hbox), button);
+
+  LOG(INFO) << __FUNCTION__<<" line " << __LINE__;
 
   GtkWidget* halign = gtk_alignment_new(1, 0, 0, 0);
   gtk_container_add(GTK_CONTAINER(halign), hbox);
   gtk_box_pack_start(GTK_BOX(vbox_), halign, FALSE, FALSE, 0);
 
   gtk_widget_show_all(window_);
+
+  LOG(INFO) << __FUNCTION__<<" line " << __LINE__;
 
   if (autoconnect_)
     g_idle_add(SimulateButtonClick, button);
@@ -297,7 +305,7 @@ void GtkMainWnd::SwitchToPeerList(const Peers& peers) {
       draw_area_ = NULL;
       draw_buffer_.reset();
     }
-
+  LOG(INFO) << __FUNCTION__<<" line " << __LINE__;
     peer_list_ = gtk_tree_view_new();
     g_signal_connect(peer_list_, "row-activated",
                      G_CALLBACK(OnRowActivatedCallback), this);
@@ -310,7 +318,7 @@ void GtkMainWnd::SwitchToPeerList(const Peers& peers) {
         GTK_LIST_STORE(gtk_tree_view_get_model(GTK_TREE_VIEW(peer_list_)));
     gtk_list_store_clear(store);
   }
-
+  LOG(INFO) << __FUNCTION__<<" line " << __LINE__;
   AddToList(peer_list_, "List of currently connected peers:", -1);
   for (Peers::const_iterator i = peers.begin(); i != peers.end(); ++i)
     AddToList(peer_list_, i->second.c_str(), i->first);
@@ -329,11 +337,11 @@ void GtkMainWnd::SwitchToStreamingUI() {
     gtk_widget_destroy(peer_list_);
     peer_list_ = NULL;
   }
-
+  LOG(INFO) << __FUNCTION__<<" line " << __LINE__;
   draw_area_ = gtk_drawing_area_new();
   gtk_container_add(GTK_CONTAINER(window_), draw_area_);
   g_signal_connect(G_OBJECT(draw_area_), "draw", G_CALLBACK(&::Draw), this);
-
+  LOG(INFO) << __FUNCTION__<<" line " << __LINE__;
   gtk_widget_show_all(window_);
 }
 

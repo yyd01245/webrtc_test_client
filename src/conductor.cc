@@ -61,6 +61,7 @@ Conductor::Conductor(JanusSignal* client, MainWindow* main_wnd)
     main_wnd_(main_wnd) {
   client_->RegisterObserver(this);
   main_wnd->RegisterObserver(this);
+  LOG(INFO) << __FUNCTION__<<" line " << __LINE__;
 }
 
 Conductor::~Conductor() {
