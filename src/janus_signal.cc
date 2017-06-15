@@ -80,6 +80,47 @@ JanusSignal::~JanusSignal(){
   m_bQuit = true;
 }
 
+void JanusSignal::RegisterObserver(
+    PeerConnectionClientObserver* callback) {
+  ASSERT(!callback_);
+  callback_ = callback;
+}
+
+
+int JanusSignal::id() const {
+  return 1111;
+}
+
+void JanusSignal::Connect(const std::string& server, int port,
+              const std::string& client_name){
+
+}
+
+bool JanusSignal::SendToPeer(int peer_id, const std::string& message){
+
+  return true;
+}
+bool JanusSignal::SendHangUp(int peer_id){
+
+  return true;
+}
+bool JanusSignal::IsSendingMessage(){
+  return true;
+}
+
+bool JanusSignal::SignOut(){
+
+  return true;
+}
+
+bool JanusSignal::is_connected() const {
+  return true;
+}
+
+const Peers& JanusSignal::peers() const {
+  return peers_;
+}
+
 
 int JanusSignal::Initialize(){
   // m_HttpRequest.reset(new rtc::HttpRequest("uprtc_client"));

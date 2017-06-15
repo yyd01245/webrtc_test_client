@@ -17,8 +17,8 @@
 int main(){
 
   std::cout << "hello janus client demo "<<std::endl;
-  std::unique_ptr<uprtc::JanusSignal> janusSignal;
-  janusSignal.reset(new uprtc::JanusSignal("10.0.3.115",8088));
+  std::unique_ptr<JanusSignal> janusSignal;
+  janusSignal.reset(new JanusSignal("10.0.3.115",8088));
   std::cout<< "create signal instance "<<std::endl;
   janusSignal->Initialize();
   std::cout<< "init signal instance "<<std::endl;

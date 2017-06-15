@@ -17,7 +17,7 @@
 #include "./common.h"
 
 
-namespace uprtc {
+// namespace uprtc {
 
 class JanusSignal;
 
@@ -60,6 +60,6 @@ private:
 };
 
 
-}
+// }
 
 #endif

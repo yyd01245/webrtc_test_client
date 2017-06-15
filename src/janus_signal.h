@@ -16,17 +16,56 @@
 #include "webrtc/base/httpserver.h"
 #include "webrtc/base/httpclient.h"
 
+#include "webrtc/base/nethelpers.h"
+#include "webrtc/base/physicalsocketserver.h"
+#include "webrtc/base/signalthread.h"
+#include "webrtc/base/sigslot.h"
 #include "./common.h"
 #include "./janus_handle.h"
-namespace uprtc {
 
+
+struct PeerConnectionClientObserver {
+  virtual void OnSignedIn() = 0;  // Called when we're logged on. attached
+  virtual void OnDisconnected() = 0;
+  virtual void OnPeerConnected(int id, const std::string& name) = 0;
+  virtual void OnPeerDisconnected(int peer_id) = 0;
+  virtual void OnMessageFromPeer(int peer_id, const std::string& message) = 0;
+  virtual void OnMessageSent(int err) = 0;
+  virtual void OnServerConnectionFailure() = 0;
+
+ protected:
+  virtual ~PeerConnectionClientObserver() {}
+};
+typedef std::map<int, std::string> Peers;
 
 // JanusSignal 
 class JanusSignal: public rtc::Thread
 {
 public: 
+  JanusSignal(){}
   explicit JanusSignal(const std::string destIP,int destPort);
   virtual ~JanusSignal();
+
+  void RegisterObserver(PeerConnectionClientObserver* callback);
+
+  int id() const;
+  bool is_connected() const;
+  const Peers& peers() const;
+
+  void Connect(const std::string& server, int port,
+               const std::string& client_name);
+
+  bool SendToPeer(int peer_id, const std::string& message);
+  bool SendHangUp(int peer_id);
+  bool IsSendingMessage();
+
+  bool SignOut();
+
+  // implements the MessageHandler interface
+  void OnMessage(rtc::Message* msg);
+
+
+  // 
 
 // uprtc signal
   int Initialize();
@@ -52,7 +91,12 @@ public:
 // multiple handle 
 
 private:
+
+  Peers peers_;
+  // notify to wind
+  PeerConnectionClientObserver* callback_;
   bool m_bQuit;
+  bool m_bConnect;
   bool m_bChangeUrl;
   std::string m_strDestIP;
   int m_iDestPort;
@@ -66,6 +110,5 @@ private:
   std::unique_ptr<rtc::HttpRequest> m_longPull;
 };
 
-}
 
 #endif
