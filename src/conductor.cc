@@ -55,7 +55,7 @@ class DummySetSessionDescriptionObserver
 };
 
 Conductor::Conductor(JanusSignal* client, MainWindow* main_wnd)
-  : peer_id_(-1),
+  : peer_id_(0),
     loopback_(false),
     client_(client),
     main_wnd_(main_wnd) {
@@ -142,7 +142,7 @@ void Conductor::DeletePeerConnection() {
   main_wnd_->StopLocalRenderer();
   main_wnd_->StopRemoteRenderer();
   peer_connection_factory_ = NULL;
-  peer_id_ = -1;
+  peer_id_ = 0;
   loopback_ = false;
 }
 
@@ -213,14 +213,14 @@ void Conductor::OnDisconnected() {
     main_wnd_->SwitchToConnectUI();
 }
 
-void Conductor::OnPeerConnected(int id, const std::string& name) {
-  LOG(INFO) << __FUNCTION__;
+void Conductor::OnPeerConnected(uint64_t id, const std::string& name) {
+  LOG(INFO) << __FUNCTION__ << "onpeerconnect peerid= "<<id;
   // Refresh the list if we're showing it.
   if (main_wnd_->current_ui() == MainWindow::LIST_PEERS)
     main_wnd_->SwitchToPeerList(client_->peers());
 }
 
-void Conductor::OnPeerDisconnected(int id) {
+void Conductor::OnPeerDisconnected(uint64_t id) {
   LOG(INFO) << __FUNCTION__;
   if (id == peer_id_) {
     LOG(INFO) << "Our peer disconnected";
@@ -232,13 +232,13 @@ void Conductor::OnPeerDisconnected(int id) {
   }
 }
 
-void Conductor::OnMessageFromPeer(int peer_id, const std::string& message) {
-  ASSERT(peer_id_ == peer_id || peer_id_ == -1);
+void Conductor::OnMessageFromPeer(uint64_t peer_id, const std::string& message) {
+  ASSERT(peer_id_ == peer_id || peer_id_ == 0);
   ASSERT(!message.empty());
   LOG(INFO) << __FUNCTION__<<" line " << __LINE__;
   LOG(INFO)<< "OnMessageFromPeer : "<< message;
   if (!peer_connection_.get()) {
-    ASSERT(peer_id_ == -1);
+    // ASSERT(peer_id_ == -1);
     peer_id_ = peer_id;
     LOG(INFO)<< "begin init peerconnection" << "message"<< message;
     if (!InitializePeerConnection()) {
@@ -247,7 +247,7 @@ void Conductor::OnMessageFromPeer(int peer_id, const std::string& message) {
       return;
     }
   } else if (peer_id != peer_id_) {
-    ASSERT(peer_id_ != -1);
+    ASSERT(peer_id_ != 0);
     LOG(WARNING) << "Received a message from unknown peer while already in a "
                     "conversation with a different peer.";
     return;
@@ -352,17 +352,17 @@ void Conductor::DisconnectFromServer() {
     client_->SignOut();
 }
 
-void Conductor::ConnectToPeer(int peer_id) {
+void Conductor::ConnectToPeer(uint64_t peer_id) {
   // begin create offer and connect to peer
-  ASSERT(peer_id_ == -1);
-  ASSERT(peer_id != -1);
+  ASSERT(peer_id_ == 0);
+  ASSERT(peer_id != 0);
   LOG(INFO) << __FUNCTION__<<" line " << __LINE__;
   if (peer_connection_.get()) {
     main_wnd_->MessageBox("Error",
         "We only support connecting to one peer at a time", true);
     return;
   }
-  LOG(INFO)<<  "BEGIN connect peer : "<< peer_id;
+  LOG(INFO)<<  "BEGIN connect peer : ConnectToPeer "<< peer_id;
   if (InitializePeerConnection()) {
     peer_id_ = peer_id;
     peer_connection_->CreateOffer(this, NULL);
@@ -475,7 +475,7 @@ void Conductor::UIThreadCallback(int msg_id, void* data) {
         msg = pending_messages_.front();
         pending_messages_.pop_front();
 
-        if (!client_->SendToPeer(peer_id_, *msg) && peer_id_ != -1) {
+        if (!client_->SendToPeer(peer_id_, *msg) && peer_id_ != 0) {
           LOG(LS_ERROR) << "SendToPeer failed";
           DisconnectFromServer();
         }
@@ -483,7 +483,7 @@ void Conductor::UIThreadCallback(int msg_id, void* data) {
       }
 
       if (!peer_connection_.get())
-        peer_id_ = -1;
+        peer_id_ = 0;
 
       break;
     }
@@ -523,9 +523,10 @@ void Conductor::OnSuccess(webrtc::SessionDescriptionInterface* desc) {
 
   std::string sdp;
   desc->ToString(&sdp);
-
+  LOG(INFO)<<__FUNCTION__<<" line "<<__LINE__;
+  LOG(INFO)<<"recv : "<< sdp;
   // set sdp to server
-  client_->ConfigureSDP2Janus((uint64_t)peer_id_,desc->type(),sdp);
+  client_->ConfigureSDP2Janus(peer_id_,desc->type(),sdp);
 
   // For loopback test. To save some connecting delay.
   // if (loopback_) {

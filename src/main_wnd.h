@@ -27,7 +27,7 @@ class MainWndCallback {
  public:
   virtual void StartLogin(const std::string& server, int port) = 0;
   virtual void DisconnectFromServer() = 0;
-  virtual void ConnectToPeer(int peer_id) = 0;
+  virtual void ConnectToPeer(uint64_t peer_id) = 0;
   virtual void DisconnectFromCurrentPeer() = 0;
   virtual void UIThreadCallback(int msg_id, void* data) = 0;
   virtual void Close() = 0;

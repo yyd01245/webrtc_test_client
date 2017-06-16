@@ -91,10 +91,10 @@ void InitializeList(GtkWidget* list) {
 }
 
 // Adds an entry to a tree view.
-void AddToList(GtkWidget* list, const gchar* str, int value) {
+void AddToList(GtkWidget* list, const gchar* str,uint64_t  value) {
   GtkListStore* store = GTK_LIST_STORE(
       gtk_tree_view_get_model(GTK_TREE_VIEW(list)));
-
+      LOG(INFO)<<__FUNCTION__<<" ID "<<value;
   GtkTreeIter iter;
   gtk_list_store_append(store, &iter);
   gtk_list_store_set(store, &iter, 0, str, 1, value, -1);
@@ -325,7 +325,7 @@ void GtkMainWnd::SwitchToPeerList(const Peers& peers) {
     gtk_list_store_clear(store);
   }
   LOG(INFO) << __FUNCTION__<<" line " << __LINE__;
-  AddToList(peer_list_, "List of currently connected peers:", -1);
+  AddToList(peer_list_, "List of currently connected peers:", 0);
   for (Peers::const_iterator i = peers.begin(); i != peers.end(); ++i)
     AddToList(peer_list_, i->second.c_str(), i->first);
 
@@ -417,9 +417,10 @@ void GtkMainWnd::OnRowActivated(GtkTreeView* tree_view, GtkTreePath* path,
       gtk_tree_view_get_selection(GTK_TREE_VIEW(tree_view));
   if (gtk_tree_selection_get_selected(selection, &model, &iter)) {
      char* text;
-     int id = -1;
+     uint64_t id = 0;
      gtk_tree_model_get(model, &iter, 0, &text, 1, &id,  -1);
-     if (id != -1)
+      LOG(INFO)<< "GET LIST ID = "<<id;
+     if (id != 0)
        callback_->ConnectToPeer(id);
      g_free(text);
   }

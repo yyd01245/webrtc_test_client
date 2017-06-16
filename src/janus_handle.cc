@@ -5,6 +5,7 @@ using namespace uprtc;
 
 BroadcastPlugin::BroadcastPlugin(clientInfo_t &cl,JanusSignal* ptr){
   m_handleID = cl.handleID;
+  LOG(INFO)<< "** broadcast handleid ****"<< m_handleID;
   m_role = cl.role;
   m_clientID = cl.clientID;
   m_jansuSignaler = ptr;
@@ -33,9 +34,11 @@ int BroadcastPlugin::parseEvent(Json::Value &message,Json::Value &jsep){
   LOG(INFO)<< type.c_str();
   if (!type.empty()) {
     if(type == "joined"){
-      m_jansuSignaler->Configure(this);
+      if(m_jansuSignaler)
+        m_jansuSignaler->Configure(this);
     }else if(type == "registered"){
-      m_jansuSignaler->Join(this);
+      if(m_jansuSignaler)
+        m_jansuSignaler->Join(this);
     }else if(type == "attached"){
 
     }else if(type == "configure"){
@@ -43,8 +46,8 @@ int BroadcastPlugin::parseEvent(Json::Value &message,Json::Value &jsep){
       if(rtc::GetStringFromJsonObject(message,"configure",&res)){
         if(res == "ok"){
           LOG(INFO)<< "confiure return ok";
-
-          m_jansuSignaler->ReplyConfigure(this,jsep);
+          if(m_jansuSignaler)
+            m_jansuSignaler->ReplyConfigure(this,jsep);
         }
 
       }      
@@ -79,7 +82,7 @@ int BroadcastPlugin::Join(std::string transaction,Json::Value &requestinfo){
   body["client_id"] = Json::Value((Json::UInt64)m_clientID);
   body["ptype"] = Json::Value(m_role == PUBLISHER ? "publisher":"listener");
   body["sec_key"] = Json::Value("");
-  body["datachannel"] = Json::Value(false);
+  // body["datachannel"] = Json::Value(false);
 
   requestinfo["uprtc"] = Json::Value("message");
   requestinfo["body"] = Json::Value(body);
@@ -93,19 +96,18 @@ int BroadcastPlugin::Trick(){
 int BroadcastPlugin::Configure(std::string transaction,Json::Value &requestinfo,
         std::string type,std::string sdp){
   Json::Value body;
-  Json::Value message;
+  // Json::Value message;
   Json::Value jsep; 
-  message["request"] = Json::Value("configure");
-  message["audio"] = Json::Value(true);
-  message["video"] = Json::Value(true);
+  body["request"] = Json::Value("configure");
+  body["audio"] = Json::Value(true);
+  body["video"] = Json::Value(true);
 
   jsep["type"] = Json::Value(type);
   jsep["sdp"] = Json::Value(sdp);
-  body["message"] = Json::Value(message);
-  body["jsep"] = Json::Value(jsep);
-
+ 
   requestinfo["uprtc"] = Json::Value("message");
   requestinfo["body"] = Json::Value(body);
+  requestinfo["jsep"] = Json::Value(jsep);
   requestinfo["transaction"] = Json::Value(transaction);          
   return 0;
 }

@@ -27,17 +27,17 @@
 struct PeerConnectionClientObserver {
   virtual void OnSignedIn() = 0;  // Called when we're logged on. attached
   virtual void OnDisconnected() = 0;
-  virtual void OnPeerConnected(int id, const std::string& name) = 0;
-  virtual void OnPeerDisconnected(int peer_id) = 0;
-  virtual void OnMessageFromPeer(int peer_id, const std::string& message) = 0;
+  virtual void OnPeerConnected(uint64_t id, const std::string& name) = 0;
+  virtual void OnPeerDisconnected(uint64_t peer_id) = 0;
+  virtual void OnMessageFromPeer(uint64_t peer_id, const std::string& message) = 0;
   virtual void OnMessageSent(int err) = 0;
   virtual void OnServerConnectionFailure() = 0;
 
  protected:
   virtual ~PeerConnectionClientObserver() {}
 };
-typedef std::map<int, std::string> Peers;
-
+typedef std::map<uint64_t, std::string> Peers;
+typedef std::map<uint64_t,uint64_t> mapHandleID;
 // JanusSignal 
 class JanusSignal: public rtc::Thread
 {
@@ -55,8 +55,8 @@ public:
   void Connect(const std::string& server, int port,
                const std::string& client_name);
 
-  bool SendToPeer(int peer_id, const std::string& message);
-  bool SendHangUp(int peer_id);
+  bool SendToPeer(uint64_t peer_id, const std::string& message);
+  bool SendHangUp(uint64_t peer_id);
   bool IsSendingMessage();
 
   bool SignOut();
@@ -93,8 +93,9 @@ public:
 // multiple handle 
 
 private:
-
+  int m_index;
   Peers peers_;
+  mapHandleID m_peers_handle;
   // notify to wind
   PeerConnectionClientObserver* callback_;
   bool m_bQuit;
@@ -105,6 +106,7 @@ private:
   std::string m_transaction;
   int m_maxev;
   uint64_t m_sessionID;
+
   std::map<uint64_t,BroadcastPlugin* > m_handlePlugins;
   std::map<std::string,std::string> m_transcationMap;
 

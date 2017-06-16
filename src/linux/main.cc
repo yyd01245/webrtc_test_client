@@ -87,7 +87,7 @@ int main(int argc, char* argv[]) {
   rtc::InitializeSSL();
   // Must be constructed after we set the socketserver.
   // JanusSignal client;
-  JanusSignal *client = new JanusSignal("10.0.3.115",8088);
+  JanusSignal *client = new JanusSignal("127.0.0.1",8088);
   rtc::scoped_refptr<Conductor> conductor(
       new rtc::RefCountedObject<Conductor>(client, &wnd));
   socket_server.set_client(client);

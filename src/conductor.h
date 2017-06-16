@@ -88,11 +88,11 @@ class Conductor
 
   virtual void OnDisconnected();
 
-  virtual void OnPeerConnected(int id, const std::string& name);
+  virtual void OnPeerConnected(uint64_t id, const std::string& name);
 
-  virtual void OnPeerDisconnected(int id);
+  virtual void OnPeerDisconnected(uint64_t id);
 
-  virtual void OnMessageFromPeer(int peer_id, const std::string& message);
+  virtual void OnMessageFromPeer(uint64_t peer_id, const std::string& message);
 
   virtual void OnMessageSent(int err);
 
@@ -106,7 +106,7 @@ class Conductor
 
   virtual void DisconnectFromServer();
 
-  virtual void ConnectToPeer(int peer_id);
+  virtual void ConnectToPeer(uint64_t peer_id);
 
   virtual void DisconnectFromCurrentPeer();
 
@@ -120,7 +120,7 @@ class Conductor
   // Send a message to the remote peer.
   void SendMessage(const std::string& json_object);
 
-  int peer_id_;
+  uint64_t peer_id_;
   bool loopback_;
   rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection_;
   rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
