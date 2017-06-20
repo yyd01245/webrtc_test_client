@@ -41,18 +41,15 @@ int BroadcastPlugin::parseEvent(Json::Value &message,Json::Value &jsep){
         m_jansuSignaler->Join(this);
     }else if(type == "attached"){
 
-    }else if(type == "configure"){
+    }else if(type == "event"){
       std::string res;
-      if(rtc::GetStringFromJsonObject(message,"configure",&res)){
+      if(rtc::GetStringFromJsonObject(message,"configured",&res)){
         if(res == "ok"){
-          LOG(INFO)<< "confiure return ok";
+          // LOG(INFO)<< "confiure return ok "<< jsep;
           if(m_jansuSignaler)
             m_jansuSignaler->ReplyConfigure(this,jsep);
         }
-
       }      
-    }else if(type == "event"){
-
     }else if(type == "detroyed"){
       
     }

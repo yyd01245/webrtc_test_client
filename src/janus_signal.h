@@ -73,7 +73,8 @@ public:
   int CreateHandle();
   int Register(BroadcastPlugin* broadcast);
   int Join(BroadcastPlugin* broadcast);
-  int Trick();
+  int SendTrickle(const std::string& msg);
+    int SendTrickle(Json::Value& msg);
   int Configure(BroadcastPlugin* broadcast);
   int ConfigureSDP2Janus(uint64_t handleid, std::string type,std::string sdp);
   int ReplyConfigure(BroadcastPlugin* broadcast,Json::Value &json);

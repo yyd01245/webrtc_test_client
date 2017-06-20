@@ -280,9 +280,9 @@ int JanusSignal::parseSignal(Json::Value &message){
             return -1;
           }
           Json::Value jsepData;
-          rtc::GetValueFromJsonObject(message["plugindata"],"jsep",&jsepData);
-
-          br->parseEvent(eventData,jsepData);
+          rtc::GetValueFromJsonObject(message,"jsep",&jsepData);
+          LOG(INFO)<< "READY jsep: "<<jsepData;
+          br->parseEvent(eventData,jsepData); 
         }
 
       }else {
@@ -455,9 +455,49 @@ int JanusSignal::Join(BroadcastPlugin* broadcast){
   message.clear();
   return 0;
 }
-int JanusSignal::Trick(){
+int JanusSignal::SendTrickle(Json::Value& msg){
+  LOG(INFO)<< "----- BEGIN "<< __FUNCTION__ <<"------";
+  std::string transaction = _randomString(12);
+  Json::StyledWriter writer;
+  Json::Value requestinfo;         
+  requestinfo["uprtc"] = Json::Value("trickle");
+  requestinfo["candidate"] = msg;
+  requestinfo["transaction"] = Json::Value(m_transaction);
+  LOG(INFO)<< requestinfo;
+  m_transcationMap[transaction] = TRICKLE;
+  std::string message(writer.write(requestinfo));
+  LOG(INFO)<< message << "sessionid "<< m_sessionID;
+  auto iter = m_handlePlugins.begin();
+  BroadcastPlugin* broadcast = iter->second;
+  SendMessage(message,m_sessionID,broadcast->GetHandleID());
 
-  return 0;
+  ResponeMessage();
+  requestinfo.clear();
+  message.clear();
+  return 0;  
+
+}
+int JanusSignal::SendTrickle(const std::string & msg){
+  LOG(INFO)<< "----- BEGIN "<< __FUNCTION__ <<"------";
+  std::string transaction = _randomString(12);
+  Json::StyledWriter writer;
+  Json::Value requestinfo;         
+  requestinfo["uprtc"] = Json::Value("trickle");
+  requestinfo["candidate"] = Json::Value(msg);
+  requestinfo["transaction"] = Json::Value(m_transaction);
+  LOG(INFO)<< requestinfo;
+  m_transcationMap[transaction] = TRICKLE;
+  std::string message(writer.write(requestinfo));
+  LOG(INFO)<< message << "sessionid "<< m_sessionID;
+  auto iter = m_handlePlugins.begin();
+  BroadcastPlugin* broadcast = iter->second;
+  SendMessage(message,m_sessionID,broadcast->GetHandleID());
+
+  ResponeMessage();
+  requestinfo.clear();
+  message.clear();
+  return 0;  
+
 }
 
 int JanusSignal::Configure(BroadcastPlugin* broadcast){
@@ -501,10 +541,11 @@ int JanusSignal::ConfigureSDP2Janus(uint64_t id,std::string type,std::string sdp
   LOG(INFO)<< "** BEGIN CONFIGURE SDP ****";
   br->Configure(transaction, requestinfo,type,sdp);           
 
+  // todo fix support h264 sdp
   // LOG(INFO)<< requestinfo;
   m_transcationMap[transaction] = CONFIGURE;
   std::string message(writer.write(requestinfo));
-  LOG(INFO)<< message << "sessionid "<< m_sessionID;
+  // LOG(INFO)<< message << "sessionid "<< m_sessionID;
   SendMessage(message,m_sessionID,handleID);
 
   ResponeMessage();
@@ -520,7 +561,21 @@ int JanusSignal::ReplyConfigure(BroadcastPlugin* broadcast,Json::Value &jsep){
     if(rtc::GetStringFromJsonObject(jsep,"sdp",&sdp)){
       Json::StyledWriter writer;
       // Json::Value jmessage;
-      callback_->OnMessageFromPeer(broadcast->GetHandleID(),
+       LOG(INFO)<<__FUNCTION__<<" reply "<< jsep;
+      // get m_peers_handle
+      uint64_t id = 0;
+      auto iter = m_peers_handle.begin();
+      while(iter != m_peers_handle.end()){
+        uint64_t uhandleID = iter->second;
+        if(uhandleID == broadcast->GetHandleID()){
+          id = iter->first;
+          LOG(INFO)<< "find id :"<<id;
+          break;
+        }
+        ++iter;
+      }
+      LOG(INFO)<<__FUNCTION__<<" reply id:"<< id;
+      callback_->OnMessageFromPeer(id,
         writer.write(jsep));
     }
   }

@@ -132,7 +132,8 @@ bool Conductor::CreatePeerConnection(bool dtls) {
   LOG(INFO) << __FUNCTION__<<" line " << __LINE__;
   peer_connection_ = peer_connection_factory_->CreatePeerConnection(
       config, &constraints, NULL, NULL, this);
-  LOG(INFO) << __FUNCTION__<<" line " << __LINE__;      
+  LOG(INFO) << __FUNCTION__<<" line " << __LINE__;  
+
   return peer_connection_.get() != NULL;
 }
 
@@ -192,7 +193,10 @@ void Conductor::OnIceCandidate(const webrtc::IceCandidateInterface* candidate) {
     return;
   }
   jmessage[kCandidateSdpName] = sdp;
-  SendMessage(writer.write(jmessage));
+  // SendMessage(writer.write(jmessage));
+  LOG(INFO)<< "BEGIN send trickle :"<<jmessage;
+  client_->SendTrickle(jmessage);
+
 }
 
 //
@@ -550,6 +554,8 @@ void Conductor::OnFailure(const std::string& error) {
 }
 
 void Conductor::SendMessage(const std::string& json_object) {
-  std::string* msg = new std::string(json_object);
-  main_wnd_->QueueUIThreadCallback(SEND_MESSAGE_TO_PEER, msg);
+  // std::string* msg = new std::string(json_object);
+  // main_wnd_->QueueUIThreadCallback(SEND_MESSAGE_TO_PEER, msg);
+  client_->SendMessage(json_object);
+
 }
