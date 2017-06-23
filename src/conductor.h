@@ -19,8 +19,10 @@
 
 #include "webrtc/api/mediastreaminterface.h"
 #include "webrtc/api/peerconnectioninterface.h"
-#include "webrtc/examples/webrtc_client/src/linux/main_wnd.h"
+#include "webrtc/examples/webrtc_client/src/main_wnd.h"
 #include "webrtc/examples/webrtc_client/src/janus_signal.h"
+
+#include "webrtc/base/ssladapter.h"
 
 namespace webrtc {
 class VideoCaptureModule;
@@ -29,6 +31,8 @@ class VideoCaptureModule;
 namespace cricket {
 class VideoRenderer;
 }  // namespace cricket
+
+typedef void (*CALLBACK_CONFIG)();
 
 class Conductor
   : public webrtc::PeerConnectionObserver,
@@ -45,11 +49,18 @@ class Conductor
   };
 
   Conductor(JanusSignal* client, MainWindow* main_wnd);
-
+  Conductor(JanusSignal* client);
+  
+  bool setConfig_callback(CALLBACK_CONFIG func);
   bool connection_active() const;
 
   virtual void Close();
 
+
+  virtual void StartLogin(const std::string& server, int port);
+
+
+  virtual void ConnectToPeer(uint64_t peer_id);
  protected:
   ~Conductor();
   bool InitializePeerConnection();
@@ -102,19 +113,18 @@ class Conductor
   // MainWndCallback implementation.
   //
 
-  virtual void StartLogin(const std::string& server, int port);
 
   virtual void DisconnectFromServer();
 
-  virtual void ConnectToPeer(uint64_t peer_id);
+
 
   virtual void DisconnectFromCurrentPeer();
 
   virtual void UIThreadCallback(int msg_id, void* data);
 
   // CreateSessionDescriptionObserver implementation.
-  virtual void OnSuccess(webrtc::SessionDescriptionInterface* desc);
-  virtual void OnFailure(const std::string& error);
+  virtual void OnSuccess(webrtc::SessionDescriptionInterface* desc) override;
+  virtual void OnFailure(const std::string& error) override;
 
  protected:
   // Send a message to the remote peer.
@@ -131,6 +141,8 @@ class Conductor
   std::map<std::string, rtc::scoped_refptr<webrtc::MediaStreamInterface> >
       active_streams_;
   std::string server_;
+
+  CALLBACK_CONFIG configure_callback_;
 };
 
 #endif  // WEBRTC_EXAMPLES_PEERCONNECTION_CLIENT_CONDUCTOR_H_

@@ -53,6 +53,8 @@ class MainWindow {
                           bool is_error) = 0;
 
   virtual UI current_ui() = 0;
+  //yyd add connect to peer
+  virtual void ConnectCallback(uint64_t id) = 0;
 
   virtual void SwitchToConnectUI() = 0;
   virtual void SwitchToPeerList(const Peers& peers) = 0;

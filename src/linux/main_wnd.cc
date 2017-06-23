@@ -53,27 +53,29 @@ gboolean OnKeyPressCallback(GtkWidget* widget, GdkEventKey* key,
 
 void OnRowActivatedCallback(GtkTreeView* tree_view, GtkTreePath* path,
                             GtkTreeViewColumn* column, gpointer data) {
+  LOG(INFO) << __FUNCTION__<<" Callback activated line " << __LINE__;
   reinterpret_cast<GtkMainWnd*>(data)->OnRowActivated(tree_view, path, column);
+  // reinterpret_cast<GtkMainWnd*>(data)->ConnectCallback(1);
 }
 
 gboolean SimulateLastRowActivated(gpointer data) {
-    LOG(INFO) << __FUNCTION__<<" line " << __LINE__;
+    LOG(INFO) << __FUNCTION__<<" row activated line " << __LINE__;
   GtkTreeView* tree_view = reinterpret_cast<GtkTreeView*>(data);
   GtkTreeModel* model = gtk_tree_view_get_model(tree_view);
 
   // "if iter is NULL, then the number of toplevel nodes is returned."
   int rows = gtk_tree_model_iter_n_children(model, NULL);
   GtkTreePath* lastpath = gtk_tree_path_new_from_indices(rows - 1, -1);
-
+    LOG(INFO) << __FUNCTION__<<" row activated line " << __LINE__;
   // Select the last item in the list
   GtkTreeSelection* selection = gtk_tree_view_get_selection(tree_view);
   gtk_tree_selection_select_path(selection, lastpath);
 
   // Our TreeView only has one column, so it is column 0.
   GtkTreeViewColumn* column = gtk_tree_view_get_column(tree_view, 0);
-
+    LOG(INFO) << __FUNCTION__<<" row activated line " << __LINE__;
   gtk_tree_view_row_activated(tree_view, lastpath, column);
-
+    LOG(INFO) << __FUNCTION__<<" row activated line " << __LINE__;
   gtk_tree_path_free(lastpath);
   return false;
 }
@@ -108,12 +110,14 @@ struct UIThreadCallbackData {
   void* data;
 };
 
-gboolean HandleUIThreadCallback(gpointer data) {
-  UIThreadCallbackData* cb_data = reinterpret_cast<UIThreadCallbackData*>(data);
-  cb_data->callback->UIThreadCallback(cb_data->msg_id, cb_data->data);
-  delete cb_data;
-  return false;
-}
+// gboolean HandleUIThreadCallback(gpointer data) {
+//   UIThreadCallbackData* cb_data = reinterpret_cast<UIThreadCallbackData*>(data);
+//   //fixme
+//   // cb_data->callback->UIThreadCallback(cb_data->msg_id, cb_data->data);
+//   LOG(INFO)<<__FUNCTION__<<" HANDLEUI CALLBACK "<< cb_data->msg_id;
+//   delete cb_data;
+//   return false;
+// }
 
 gboolean Redraw(gpointer data) {
   GtkMainWnd* wnd = reinterpret_cast<GtkMainWnd*>(data);
@@ -200,8 +204,9 @@ void GtkMainWnd::StopRemoteRenderer() {
 }
 
 void GtkMainWnd::QueueUIThreadCallback(int msg_id, void* data) {
-  g_idle_add(HandleUIThreadCallback,
-             new UIThreadCallbackData(callback_, msg_id, data));
+  //fixme
+  // g_idle_add(HandleUIThreadCallback,
+  //            new UIThreadCallbackData(callback_, msg_id, data));
 }
 
 bool GtkMainWnd::Create() {
@@ -311,7 +316,7 @@ void GtkMainWnd::SwitchToPeerList(const Peers& peers) {
       draw_area_ = NULL;
       draw_buffer_.reset();
     }
-  LOG(INFO) << __FUNCTION__<<" line " << __LINE__;
+  LOG(INFO) << __FUNCTION__<<"SwitchToPeerList line " << __LINE__;
     peer_list_ = gtk_tree_view_new();
     g_signal_connect(peer_list_, "row-activated",
                      G_CALLBACK(OnRowActivatedCallback), this);
@@ -329,8 +334,10 @@ void GtkMainWnd::SwitchToPeerList(const Peers& peers) {
   for (Peers::const_iterator i = peers.begin(); i != peers.end(); ++i)
     AddToList(peer_list_, i->second.c_str(), i->first);
 
+// autocall_
   if (autocall_ && peers.begin() != peers.end())
     g_idle_add(SimulateLastRowActivated, peer_list_);
+
 }
 
 void GtkMainWnd::SwitchToStreamingUI() {
@@ -408,8 +415,39 @@ void GtkMainWnd::OnKeyPress(GtkWidget* widget, GdkEventKey* key) {
   }
 }
 
+gboolean EmptyCallback(gpointer data) {
+  static bool connect = true;
+  if(connect == false){
+    return false;
+  }
+  connect = false;
+    LOG(INFO) << __FUNCTION__ << "onpeerconnect peerid";
+
+  GtkMainWnd* this0 = reinterpret_cast<GtkMainWnd*>(data);
+  this0->Peercallback();
+  return true;
+}
+void GtkMainWnd::Peercallback(){
+    LOG(INFO) << __FUNCTION__ << "onpeerconnect peerid 1";
+  uint64_t id = 1;
+  callback_->ConnectToPeer(id);
+      LOG(INFO) << __FUNCTION__ << "onpeerconnect peerid 2";
+}
+
+void GtkMainWnd::ConnectCallback(uint64_t id){
+  LOG(INFO) << __FUNCTION__<<" callback line " << __LINE__<< " id= "<<id;
+  // callback_->ConnectToPeer(id);
+  // SimulateLastRowActivated(peer_list_);
+
+  //  g_idle_add(SimulateLastRowActivated, peer_list_);
+   g_idle_add(EmptyCallback, this);
+  // g_signal_emit_by_name(peer_list_,"row-activated");
+}
+
 void GtkMainWnd::OnRowActivated(GtkTreeView* tree_view, GtkTreePath* path,
                                 GtkTreeViewColumn* column) {
+  LOG(INFO) << __FUNCTION__<<" OnRowActivated line " << __LINE__;
+
   ASSERT(peer_list_ != NULL);
   GtkTreeIter iter;
   GtkTreeModel* model;
@@ -419,11 +457,13 @@ void GtkMainWnd::OnRowActivated(GtkTreeView* tree_view, GtkTreePath* path,
      char* text;
      uint64_t id = 0;
      gtk_tree_model_get(model, &iter, 0, &text, 1, &id,  -1);
-      LOG(INFO)<< "GET LIST ID = "<<id;
+      LOG(INFO)<< "connectToPeer GET LIST ID = "<<id;
      if (id != 0)
        callback_->ConnectToPeer(id);
      g_free(text);
   }
+  // callback_->ConnectToPeer(1);
+
 }
 
 void GtkMainWnd::OnRedraw() {

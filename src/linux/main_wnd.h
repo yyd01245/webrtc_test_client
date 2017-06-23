@@ -49,6 +49,10 @@ class GtkMainWnd : public MainWindow {
 
   virtual void QueueUIThreadCallback(int msg_id, void* data);
 
+  //yyd add 
+  virtual void ConnectCallback(uint64_t id) ;
+  void Peercallback();
+
   // Creates and shows the main window with the |Connect UI| enabled.
   bool Create();
 
