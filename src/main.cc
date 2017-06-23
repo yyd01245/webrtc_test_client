@@ -41,6 +41,7 @@ class CustomSocketServer : public rtc::PhysicalSocketServer {
     //       printf("main thread quit \n");
     //   thread_->Quit();
     // }
+    usleep(1000);
     return rtc::PhysicalSocketServer::Wait(0/*cms == -1 ? 1 : cms*/,
                                                  process_io);
   }
