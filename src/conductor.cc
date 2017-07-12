@@ -153,6 +153,10 @@ bool Conductor::CreatePeerConnection(bool dtls) {
     constraints.AddOptional(webrtc::MediaConstraintsInterface::kEnableDtlsSrtp,
                             "false");
   }
+  // constraints.SetMandatoryMinWidth(720);
+  // constraints.SetMandatoryMinHeight(576);
+  // constraints.SetOptionalMaxWidth(720);
+  // constraints.SetOptionalMaxHeight(576);
   LOG(INFO) << __FUNCTION__<<" line " << __LINE__;
   peer_connection_ = peer_connection_factory_->CreatePeerConnection(
       config, &constraints, NULL, NULL, this);
@@ -466,16 +470,18 @@ cricket::VideoCapturer* Conductor::OpenVideoCaptureDevice() {
   std::vector<std::string> device_names;
   {
     std::unique_ptr<webrtc::VideoCaptureModule::DeviceInfo> info(
-        webrtc::VideoCaptureFactory::CreateDeviceInfo());
+        webrtc::VideoCaptureFactory::CreateDeviceInfo(0));
     if (!info) {
       return nullptr;
     }
     int num_devices = info->NumberOfDevices();
+  LOG(INFO)<<__FUNCTION__<<" CAPTURE DEVICE NUM: "<< num_devices;	
     for (int i = 0; i < num_devices; ++i) {
       const uint32_t kSize = 256;
       char name[kSize] = {0};
       char id[kSize] = {0};
       if (info->GetDeviceName(i, name, kSize, id, kSize) != -1) {
+		          LOG(INFO)<<__FUNCTION__<<" CAPTURE DEVICE name: "<< name;
         device_names.push_back(name);
       }
     }
@@ -485,8 +491,9 @@ cricket::VideoCapturer* Conductor::OpenVideoCaptureDevice() {
   cricket::VideoCapturer* capturer = nullptr;
   for (const auto& name : device_names) {
     capturer = factory.Create(cricket::Device(name, 0));
+	LOG(INFO)<<__FUNCTION__<<" CAPTURE DEVICE name: "<< name;
     if (capturer) {
-      break;
+     // break;
     }
   }
   return capturer;
